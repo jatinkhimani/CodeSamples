@@ -1,0 +1,120 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data.Entity;
+using System.Data.Entity.Infrastructure;
+using System.Data.Entity.Validation;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace RepositoryCore
+{
+    public class Repository<TEntity> : IRepository<TEntity> where TEntity : class
+    {
+        DbContext _dbContext;
+        public Repository(DbContext dbContext)
+        {
+            this._dbContext = dbContext;
+        }
+
+        private DbSet<TEntity> dbSet => _dbContext.Set<TEntity>();
+
+        public void Add(TEntity entity)
+        {
+            try
+            {
+                dbSet.Add(entity);
+                _dbContext.SaveChanges();
+            }
+            catch (DbUpdateException dbUpdateEx)
+            {
+                var entry = _dbContext.Entry(entity);
+                if (entry.State==EntityState.Added)
+                {
+                    dbSet.Remove(entity);
+                }
+                CustomExceptionHandler.ThrowHandledException(dbUpdateEx);
+                throw;
+            }
+            catch (DbEntityValidationException dbValidationEx)
+            {
+                CustomExceptionHandler.ThrowHandledException(dbValidationEx);
+                throw;
+            }
+        }
+
+        public void Delete(object id)
+        {
+            try
+            {
+                var entity = Get(id);
+                dbSet.Remove(entity);
+                _dbContext.SaveChanges();
+            }
+            catch (DbUpdateException dbUpdateEx)
+            {
+                CustomExceptionHandler.ThrowHandledException(dbUpdateEx);
+                throw;
+            }
+        }
+
+        public TEntity Find(Expression<Func<TEntity, bool>> predicate)
+        {
+            return dbSet.Where(predicate).FirstOrDefault();
+        }
+
+        public List<TEntity> FindAll(Expression<Func<TEntity, bool>> predicate)
+        {
+            return dbSet.Where(predicate).ToList();
+        }
+
+        public TEntity Get(object id)
+        {
+            return dbSet.Find(id);
+        }
+
+        public List<TEntity> GetAll()
+        {
+            return dbSet.ToList();
+        }
+
+        public IQueryable<TEntity> SelectQuery(Expression<Func<TEntity, bool>> filter = null, 
+            Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> sort = null, params Expression<Func<TEntity, object>>[] includes)
+        {
+            IQueryable<TEntity> query = dbSet;
+            if (filter!=null)
+            {
+                query = query.Where(filter);
+            }
+            if (sort!=null)
+            {
+                query = sort(query);
+            }
+            if (includes!=null)
+            {
+                query = includes.Aggregate(query, (a, b) => a.Include(b));
+            }
+            return query;
+        }
+
+        public void Upadate(TEntity entity)
+        {
+            try
+            {
+                _dbContext.Entry(entity).State = EntityState.Modified;
+                _dbContext.SaveChanges();
+            }
+            catch (DbUpdateException dbUpdateEx)
+            {
+                CustomExceptionHandler.ThrowHandledException(dbUpdateEx);
+                throw;
+            }
+            catch (DbEntityValidationException dbValidationEx)
+            {
+                CustomExceptionHandler.ThrowHandledException(dbValidationEx);
+                throw;
+            }
+        }
+    }
+}

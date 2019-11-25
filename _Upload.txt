@@ -1,0 +1,26 @@
+﻿@using CustomerApp.DataAccess
+@using (Html.BeginForm("Upload","Customer",FormMethod.Post,new { enctype="multipart/form-data"}))
+{
+    <div class="modal fade" id="EntityModal"
+         data-backdrop="static" tabindex="-1" data-keyboard="false">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Upload Photo</h3>
+                </div>
+                <div class="modal-body">
+                    <div class="row form-group">
+                        @Html.Label("Select Photo",new { @class="col-md-4 control-label"})
+                        <div class="col-md-4">
+                           <input type="file" id="file" name="file" onchange="CheckFileExtention(this,'#btnUpload')"/>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-primary" id="btnUpload" disabled="disabled" type="submit">Upload</button>
+                    <button class="btn btn-default" data-dismiss="modal">Cancle</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}

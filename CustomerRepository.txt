@@ -1,0 +1,40 @@
+﻿using CustomerApp.DataAccess;
+using RepositoryCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace CustomerApp.Repository
+{
+    public class CustomerRepository:Repository<Customer>, ICustomerRepository
+    {
+        public CustomerRepository(RCustomerDbEntities dbContext) : base(dbContext) { }
+
+        public void AddCustomer(Customer customer)
+        {
+            Add(customer);
+        }
+
+        public void DeleteCustomer(int id)
+        {
+            Delete(id);
+        }
+
+        public Customer Find(int id)
+        {
+            return SelectQuery(f => f.CustomerId == id).FirstOrDefault();
+        }
+
+        public List<Customer> FindAllCustomer()
+        {
+            return SelectQuery().ToList();
+        }
+
+        public void UpdateCustomer(Customer customer)
+        {
+            Upadate(customer);
+        }
+    }
+}

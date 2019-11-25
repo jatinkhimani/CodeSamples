@@ -1,0 +1,61 @@
+﻿@using CustomerApp.DataAccess
+@model IEnumerable<Customer>
+
+<div id="EntityData">
+    @Html.Partial("_CustomerList")
+</div>
+<div>
+    @Ajax.ActionLink("Create", "Create", null
+    , new AjaxOptions()
+    {
+        HttpMethod="GET",
+        UpdateTargetId="EntityContainer",
+        InsertionMode=InsertionMode.Replace,
+        OnComplete="ShowModal"
+    },new { @class="btn btn-primary" })
+</div>
+<div id="EntityContainer">
+
+</div>
+
+@section scripts{
+    <script type="text/javascript">
+        var indexUrl="@Url.Action("Index")";
+        var stateUrl="@Url.Action("GetStatesByCountryId")/";
+        var cityUrl="@Url.Action("GetCitiesByStateId")/";
+
+        function GetStates(ele,eleStateId, eleCityId) {
+            var defaultItem="<option val=''>Select</option>";
+            $(eleCityId).html(defaultItem);
+            var cityId=$(ele).val();
+            $.ajax({
+                url:stateUrl+cityId,
+                dataType:"json",
+                cache:false,
+                success:function (data) {
+                    var items="<option val=''>Select</option>"
+                    $.each(data.States,function (i,item) {
+                        items+="<option value="+item.StateId+">"+item.StateName+"</option>";
+                    });
+                    $(eleStateId).html(items);
+                }
+            })
+        }
+
+        function GetCities(ele,eleCityId) {
+            var stateId=$(ele).val();
+            $.ajax({
+                url:cityUrl+stateId,
+                dataType:"json",
+                cache:false,
+                success:function (data) {
+                    var items="<option val=''>Select</option>";
+                    $.each(data.Cities,function(i, item){
+                        items+="<option value="+item.CityId+">"+item.CityName+"</option>";
+                    });
+                    $(eleCityId).html(items);
+                }
+            });
+        }   
+    </script>
+    }

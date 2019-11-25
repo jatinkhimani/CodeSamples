@@ -1,0 +1,197 @@
+﻿using CustomerApp.DataAccess;
+using CustomerApp.Repository;
+using CustomerWebApp.Common;
+using RepositoryCore;
+using System;
+using System.Collections.Generic;
+using System.Data.Entity.Validation;
+using System.IO;
+using System.Linq;
+using System.Web;
+using System.Web.Mvc;
+
+namespace CustomerWebApp.Controllers
+{
+    [Authorize]
+    public class CustomerController : Controller
+    {
+
+        public ICustomerRepository iCustRepo;
+        public ICountryRepository iCountryRepo;
+        public IStateRepository iStateRepo;
+        public ICityRepository iCityRepo;
+        public CustomerController(ICustomerRepository _iCustRepo,
+            ICountryRepository countryRepo,
+            IStateRepository stateRepo,
+            ICityRepository cityRepo)
+        {
+            iCustRepo = _iCustRepo;
+            iCountryRepo = countryRepo;
+            iStateRepo = stateRepo;
+            iCityRepo = cityRepo;
+        }
+        // GET: Customer
+        public ActionResult Index()
+        {
+            var customerList = iCustRepo.FindAllCustomer();
+            if (Request.IsAjaxRequest())
+            {
+                return PartialView("_CustomerList", customerList);
+            }
+            return View(customerList);
+        }
+
+        public JsonResult GetStatesByCountryId(int id)
+        {
+            var stateLst = iStateRepo.FindAllStates().Where(f => f.CountryId == id).Select(f=>new {f.StateName,f.StateId }).ToList();
+            return Json(new { States = stateLst }, JsonRequestBehavior.AllowGet);
+        }
+
+        public JsonResult GetCitiesByStateId(int id)
+        {
+            var cities = iCityRepo.FindAllCities().Where(f => f.StateId == id).Select(f => new { f.CityId, f.CityName }).ToList();
+            return Json(new { Cities = cities }, JsonRequestBehavior.AllowGet);
+        }
+
+        // GET: Customer/Create
+        public ActionResult Create()
+        {
+            FillViewBags();
+            return PartialView("_Create", new Customer());
+        }
+
+        private void FillViewBags()
+        {
+            //var enumValues = Enum.GetValues(typeof(GeneralUtils.CustomerType)).Cast<GeneralUtils.CustomerType>().ToList();
+            //List<KeyValuePair<string, int>> keyValueList = new List<KeyValuePair<string, int>>();
+            //for (int i = 0; i < enumValues.Count; i++)
+            //{
+            //    keyValueList.Add(new KeyValuePair<string, int>(enumValues[i].ToString(), i + 1));
+            //}
+            ViewBag.CountryList = new SelectList(iCountryRepo.FindCountries(), "CountryId", "CountryName");
+            ViewBag.StateList = new SelectList(new List<State>(), "StateId", "StateName");
+            ViewBag.CityList = new SelectList(new List<City>(), "CityId", "CityName");
+        }
+
+        // POST: Customer/Create
+        [HttpPost]
+        public ActionResult Create(Customer customer)
+        {
+            try
+            {
+                if (customer != null)
+                {
+                    customer.City = null;
+                    iCustRepo.AddCustomer(customer);
+                    return ResponseMessages.GetCustomErrorMessage(true, "Customer Record Addedd successfully");
+                }
+                else
+                {
+                    return ResponseMessages.GetGenericModalFailed();
+                }
+            }
+            catch (UniqueKeyException uniqueKeyEx)
+            {
+                return ResponseMessages.GetGenericCreatedFailed("Customer", "Customer");
+            }
+            catch (DbEntityValidationException dbValidationEx)
+            {
+                return ResponseMessages.GetGenericModalFailed();
+            }
+        }
+
+        // GET: Customer/Edit/5
+        public ActionResult Edit(int id)
+        {
+            FillViewBags();
+            if (id!=0)
+            {
+                var customer = iCustRepo.Find(id);
+                iCustRepo.UpdateCustomer(customer);
+                return PartialView("_Edit", customer);
+            }
+            else
+            {
+                return ResponseMessages.GetCustomErrorMessage(false, "Customer not found");
+            }
+        }
+
+        // POST: Customer/Edit/5
+        [HttpPost]
+        public ActionResult Edit(Customer customer)
+        {
+            try
+            {
+                customer.City = null;
+                iCustRepo.UpdateCustomer(customer);
+                return ResponseMessages.GetCustomErrorMessage(true, "Customer Updated Successfully");
+            }
+            catch (UniqueKeyException ex)
+            {
+                return ResponseMessages.GetGenericUpdateFailed("Customer", "Customer");
+            }
+            catch (DbEntityValidationException ex)
+            {
+                return ResponseMessages.GetGenericModalFailed();
+            }
+        }
+
+        // GET: Customer/Delete/5
+        public ActionResult Delete(int id)
+        {
+            if (id != 0)
+            {
+                var entity = iCustRepo.Find(id);
+                return PartialView("_Delete", entity);
+            }
+            else
+            {
+                return ResponseMessages.GetCustomErrorMessage(false, "Customer Not Found");
+            }
+        }
+
+        // POST: Customer/Delete/5
+        [HttpPost]
+        [ActionName("Delete")]
+        public ActionResult DeleteConfirmed(int id)
+        {
+            try
+            {
+                iCustRepo.DeleteCustomer(id);
+                return ResponseMessages.GetCustomErrorMessage(true, "Customer record deleted successfully");
+            }
+            catch(ForeignKeyException ex)
+            {
+                return ResponseMessages.GetGenericDeleteFailed("Customer");
+            }
+        }
+
+        [HttpGet]
+        public ActionResult Upload(int id)
+        {
+            var entity = iCustRepo.Find(id);
+            TempData["CustId"] = id;
+            return PartialView("_Upload", entity);
+        }
+        [HttpPost]
+        [ActionName("Upload")]
+        public ActionResult UploadPhoto(HttpPostedFileBase file)
+        {
+            var custId =Convert.ToInt32(TempData["CustId"]);
+            TempData.Clear();
+            if (custId!=0 && file!=null)
+            {
+                var fileName = Path.GetFileName(file.FileName);
+                var path = Path.Combine(Server.MapPath("~/Images/Customers/"), custId+fileName);
+                file.SaveAs(path);
+
+                var cust = iCustRepo.Find(custId);
+                cust.Logo = custId + fileName;
+                iCustRepo.UpdateCustomer(cust);
+                return RedirectToAction("Index");
+            }
+            TempData.Add("Failed", "File Not found. Try again");
+            return RedirectToAction("Index");
+        }
+    }
+}

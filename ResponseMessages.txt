@@ -1,0 +1,49 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Web;
+using System.Web.Http.Results;
+using System.Web.Mvc;
+
+namespace CustomerWebApp.Common
+{
+    public static class ResponseMessages
+    {
+        public static JsonResult GetCustomErrorMessage(bool isSuccess, string message)
+        {
+            if (isSuccess)
+            {
+                return new JsonResult() { Data = new { State = "Success", Message = message }, JsonRequestBehavior = JsonRequestBehavior.AllowGet };
+            }
+            else
+            {
+                return new JsonResult() { Data = new { State = "Failed", Message = message }, JsonRequestBehavior = JsonRequestBehavior.AllowGet };
+            }
+        }
+
+        public static JsonResult GetGenericModalFailed()
+        {
+            return GetCustomErrorMessage(false, "Please check all fields and try again later.");
+        }
+
+        public static JsonResult GetGenericUnknownFailed()
+        {
+            return GetCustomErrorMessage(false, "Some error occured, Please try again");
+        }
+
+        public static JsonResult GetGenericCreatedFailed(string entity, string uniqueKey)
+        {
+            return GetCustomErrorMessage(false, string.Format("Failed to save the {0} as it is {1} unique", entity, uniqueKey));
+        }
+        public static JsonResult GetGenericUpdateFailed(string entity, string uniqueKey)
+        {
+            return GetCustomErrorMessage(false, string.Format("Failed to Update the {0} as it is {1} unique", entity, uniqueKey));
+
+        }
+
+        public static JsonResult GetGenericDeleteFailed(string entity)
+        {
+            return GetCustomErrorMessage(false, string.Format("Failed to Delete the {0} as it is in use", entity));
+        }
+    }
+}

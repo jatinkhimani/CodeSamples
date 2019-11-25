@@ -1,0 +1,104 @@
+﻿var divError = "#divError";
+var divSuccess = "#divSuccess";
+
+$(document).ready(function () {
+    SetDatePicker();
+})
+
+function SetDatePicker() {
+    $(".datePicker").datepicker({
+        dateFormat: "dd MM, yy",
+        changeMonth: true,
+        changeYear: true
+    });
+}
+
+function CloseAlert(eleId) {
+    $(eleId).hide("fade");
+    $(eleId+"Text").text("");
+}
+
+function BuildMessageContainer(isSuccess, message) {
+    if (isSuccess) {
+        $(divSuccess).show("fade");
+        $(divSuccess + "Text").text(message);
+    } else {
+        $(divError).show("fade");
+        $(divError + "Text").text(message);
+    }
+}
+
+function ClearMessages() {
+    $(divError).hide("fade");
+    $(divError + "Text").text("");
+    $(divSuccess).hide("fade");
+    $(divSuccess + "Text").text("");
+}
+
+function ShowModal(result) {
+    SetDatePicker();
+    if (result) {
+        if (result.responseJSON) {
+            if (result.responseJSON.State==="Failed") {
+                BuildMessageContainer(false, result.responseJSON.Message);
+                return;
+            }
+        }
+    }
+    ClearMessages();
+    $("#EntityModal").modal("show");
+}
+
+function HideModal() {
+    $("#EntityModal").modal("hide");
+    $(".modal-backdrop").remove();
+}
+
+function Saved(result) {
+    HideModal();
+    if (result) {
+        if (result.State === "Success") {
+            if (typeof indexUrl !== "undefined") {
+                $.ajax({
+                    url: indexUrl,
+                    cache: false,
+                    success: function (data) {
+                        $("#EntityData").html(data);
+                        BuildMessageContainer(true, result.Message);
+                    },
+                    error: function (jqXHR) {
+                        BuildMessageContainer(true, jqXHR.responseText);
+                    }
+                });
+            } else {
+                BuildMessageContainer(true, result.Message);
+            }
+        } else {
+            BuildMessageContainer(false, result.Message);
+        }
+    } else {
+        BuildMessageContainer(false, "Server error occured");
+    }
+}
+
+function Failed(jqXHR) {
+    if (jqXHR) {
+        BuildMessageContainer(false, jqXHR.responseText);
+    } else {
+        BuildMessageContainer(false, "Server error occured");
+    }
+}
+
+function CheckFileExtention(eleId, btnUploadId) {
+    var fileName = $(eleId).val();
+    var ext = fileName.substring(fileName.indexOf("."), fileName.lenght).toLowerCase();
+    var validExts = [".png", ".jpg", ".jpeg"];
+    for (var i = 0; i < validExts.length; i++) {
+        if (validExts[i] === ext) {
+            $(btnUploadId).removeAttr("disabled");
+            return;
+        }
+    }
+    BuildMessageContainer(false, "Please upload valid file");
+    $(btnUploadId).attr("disabled", "disabled");
+}
