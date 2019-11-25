@@ -1,0 +1,96 @@
+﻿@using AirTraffic.DataAccess
+@model AirTrafficVM
+
+<div class="well">
+    <div id="EntityData">
+        @Html.Partial("_Dashboard")
+    </div>
+    <div id="EntityContainer">
+
+    </div>
+</div>
+@section scripts{
+    <script type="text/javascript">
+        var indexUrl = "@Url.Action("Index")";
+        var waitingToLandCount = parseInt(@Model.WaitingToLandAirCrafts.Count);
+        var waitingToTakeOffCount = parseInt(@Model.WaitingToTakeOffAirCrafts.Count);
+        var taxingCount = parseInt(@Model.TaxingAirCrafts.Count);
+        var updateStatusUrl = "@Url.Action("UpdateStatus")/";
+
+        function Redirect(result) {
+            if (result) {
+                if (result.Status === "Failed") {
+                    BuildMessageContainer(false, result.Message);
+                } else {
+                    window.location = "@Url.Action("Index")";
+                }
+            }
+        }
+
+        setInterval(function () {
+            for (var i = 0; i < waitingToLandCount; i++) {
+                var eleId = "#lblFuel" + i;
+                var tdId = "#tdFuel" + i;
+                var eleVal = parseInt($(eleId).text());
+                if (!isNaN(eleVal)) {
+                    eleVal = eleVal - 1;
+                    $(eleId).text(eleVal);
+                    if (eleVal <= 90) {
+                        $(tdId).addClass("danger");
+                    }
+                    if(eleVal ===0){
+                        $(tdId).removeClass("danger");
+                        $(eleId).text(100);
+                    }
+                }
+            }
+        }, 2000);
+
+        setInterval(function () {
+            for (var j = 0; j < waitingToTakeOffCount; j++) {
+                var eleId = "#lblWait" + j;
+                var tdId = "#tdWait" + j;
+                var eleVal = parseInt($(eleId).text());
+                if (!isNaN(eleVal)) {
+                    eleVal = eleVal - 1;
+                    $(eleId).text(eleVal);
+                    if(eleVal <= 25){
+                        $(tdId).attr("style", "background-color:lightskyblue");
+                    }
+                    if (eleVal === 0) {
+                        $(tdId).removeAttr("style");
+                        $(eleId).text(30);
+                    }
+                }
+            }
+        }, 2000);
+
+        setInterval(function () {
+            for (var k = 0; k < taxingCount; k++) {
+                var eleId = "#lblStatus" + k;
+                var hdnId = "#hdnAirCraftId" + k;
+                var eleVal = parseInt($(eleId).text());
+                if (!isNaN(eleVal)) {
+                    var hdnVal = $(hdnId).val();
+                    eleVal = eleVal - 1;
+                    $(eleId).text(eleVal);
+                    if (eleVal === 0) {
+                        $.ajax({
+                            url: updateStatusUrl + hdnVal,
+                            cache: false,
+                            success: function (data) {
+                                if (data) {
+                                    if (data.Status === "Failed") {
+                                        BuildMessageContainer(false, data.Message);
+                                    } else {
+                                        window.location = "@Url.Action("Index")";
+                                    }
+                                }
+                            }
+                        });
+                    }
+                }
+            }
+        }, 1000);
+    </script>
+}

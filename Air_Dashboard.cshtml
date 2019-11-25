@@ -1,0 +1,114 @@
+﻿@using AirTraffic.DataAccess
+@model AirTrafficVM
+
+<h3>Air Crafts (Status : Waiting to Land)</h3>
+<table class="table table-bordered">
+    <thead>
+        <tr class="success">
+            <td>AirCraft Name</td>
+            <td>Fuel Percentage</td>
+            <td>Actions</td>
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            int i = 0;
+            foreach (var item in Model.WaitingToLandAirCrafts)
+            {
+                <tr>
+                    <td>@item.Name</td>
+                    <td id="tdFuel@(i)">
+                        <label id="lblFuel@(i)">@item.FuelPercentage</label>
+                    </td>
+                    <td>
+                        @Ajax.ActionLink("Land", "Land", new { airCraftId = item.AirCraftId },
+                       new AjaxOptions()
+                       {
+                           HttpMethod="GET",
+                           OnSuccess= "Redirect",
+                           OnFailure="Failed"
+                       })
+                    </td>
+                </tr>
+                i++;
+            }
+        }
+    </tbody>
+</table>
+<br />
+<h3>Air Crafts (Status : Waiting to Take Off)</h3>
+<table class="table table-bordered">
+    <thead>
+        <tr class="success">
+            <td>AirCraft Name</td>
+            <td>Wait Time</td>
+            <td>Actions</td>
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            int j = 0;
+            foreach (var item in Model.WaitingToTakeOffAirCrafts)
+            {
+                <tr>
+                    <td>@item.Name</td>
+                    <td id="tdWait@(j)">
+                        <label id="lblWait@(j)">30</label>
+                    </td>
+                    <td>
+                        @Ajax.ActionLink("Take Off", "TakeOff", new { airCraftId = item.AirCraftId },
+                       new AjaxOptions()
+                       {
+                           HttpMethod = "GET",
+                           OnSuccess = "Redirect",
+                           OnFailure = "Failed"
+                       })
+                    </td>
+                </tr>
+                j++;
+            }
+        }
+    </tbody>
+</table>
+
+<br />
+
+<h3>Air Crafts (Status : Taxing)</h3>
+<table class="table table-bordered">
+    <thead>
+        <tr class="success">
+            <td>Runway Title</td>
+            <td>AirCraft Name</td>
+            <td>Status</td>
+        </tr>
+    </thead>
+    <tbody>
+        @{
+            int k = 0;
+            foreach (var item in Model.TaxingAirCrafts)
+            {
+                if (item.AirCraft != null)
+                {
+                    <tr>
+                        <td>@item.Title</td>
+                        <td>@item.AirCraft.Name</td>
+                        <td>
+                            @item.RunwayMessage
+                        <label id="lblStatus@(k)">10</label>
+                        @Html.HiddenFor(f => item.AirCraftId, new { @id = "hdnAirCraftId" + k })
+                    </td>
+                </tr>
+                }
+                else
+                {
+                    <tr>
+                        <td>@item.Title</td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                }
+                k++;
+            }
+        }
+    </tbody>
+</table>
